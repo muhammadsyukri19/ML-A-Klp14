@@ -11,3 +11,5 @@ venv/
 .mypy_cache/
 .DS_Store
 Thumbs.db
+model/
+dataset/data_cleaned.csv
