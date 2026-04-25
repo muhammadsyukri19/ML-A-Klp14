@@ -261,8 +261,6 @@ if page == "🏠 Dashboard Prediksi":
 
     # Range value untuk slider numerik (min, max, default)
     slider_ranges = {
-        "suitability_score": (0.0, 100.0, 50.0),
-        "stress_level": (0.0, 10.0, 1.0),
         "ph_stress_flag": (0.0, 1.0, 0.0),
         "soil_temp_c": (-10.0, 50.0, 25.0),
         "air_temp_c": (-10.0, 50.0, 27.0),
@@ -286,7 +284,7 @@ if page == "🏠 Dashboard Prediksi":
         "🌍 Properti Fisik Tanah": ["soil_type", "soil_ph", "bulk_density", "salinity_ec", "soil_temp_c", "soil_moisture_pct"],
         "🌤️ Kondisi Lingkungan": ["air_temp_c", "moisture_regime", "thermal_regime", "light_intensity_par"],
         "🧪 Kimia & Nutrisi": ["organic_matter_pct", "nutrient_balance", "cation_exchange_capacity", "buffering_capacity", "nitrogen_ppm", "phosphate_ppm", "potassium_ppm"],
-        "📈 Skor & Kategori": ["plant_category", "suitability_score", "stress_level", "ph_stress_flag", "moisture_limit_dry", "moisture_limit_wet"]
+        "📈 Skor & Kategori": ["plant_category", "ph_stress_flag", "moisture_limit_dry", "moisture_limit_wet"]
     }
 
     # Deskripsi Group
@@ -298,12 +296,17 @@ if page == "🏠 Dashboard Prediksi":
         "📋 Parameter Lainnya": "Metrik tambahan yang dikalkulasi atau diidentifikasi secara otomatis oleh sistem backend."
     }
 
-    # Process features from backend
+    # Process features from backend (abaikan location_id)
     grouped_features = {k: [] for k in groups_config.keys()}
     grouped_features["📋 Parameter Lainnya"] = []
 
     for feat in features:
         name = feat.get("name")
+        
+        # Skip fitur location_id karena hanya identifier unik, bukan parameter prediksi
+        if name == "location_id":
+            continue
+            
         assigned = False
         for group_name, group_keys in groups_config.items():
             if name in group_keys:
@@ -313,9 +316,10 @@ if page == "🏠 Dashboard Prediksi":
         if not assigned:
             grouped_features["📋 Parameter Lainnya"].append(feat)
 
-    # Quick stats
-    num_count = sum(1 for f in features if f.get("type") != "categorical")
-    cat_count = len(features) - num_count
+    # Quick stats (mengabaikan location_id dalam hitungan)
+    valid_features = [f for f in features if f.get("name") != "location_id"]
+    num_count = sum(1 for f in valid_features if f.get("type") != "categorical")
+    cat_count = len(valid_features) - num_count
     
     st.markdown("### 📊 Ringkasan Dataset")
     c1, c2, c3 = st.columns(3)
@@ -323,7 +327,7 @@ if page == "🏠 Dashboard Prediksi":
         st.markdown(f'''
         <div class="stat-card">
             <div class="stat-icon">📑</div>
-            <div class="stat-value">{len(features)}</div>
+            <div class="stat-value">{len(valid_features)}</div>
             <div class="stat-label">Total Fitur Model</div>
         </div>''', unsafe_allow_html=True)
     with c2:
@@ -369,8 +373,10 @@ if page == "🏠 Dashboard Prediksi":
 
                 with col:
                     if ftype == "categorical":
-                        opts = categorical_options.get(name, ["unknown"])
-                        user_data[name] = st.selectbox(f"📋 {label}", options=opts, key=f"inp_{name}")
+                        opts = categorical_options.get(name, [])
+                        # Pastikan pilihan pertama yang valid dimunculkan dan fallback dihindari
+                        default_idx = 0 if opts else None
+                        user_data[name] = st.selectbox(f"📋 {label}", options=opts if opts else ["data_kosong"], index=default_idx, key=f"inp_{name}")
                     else:
                         min_v, max_v, default_v = slider_ranges.get(name, (0.0, 100.0, 10.0))
                         user_data[name] = st.slider(f"📊 {label}", min_value=float(min_v), max_value=float(max_v), value=float(default_v), step=0.1, key=f"inp_{name}")

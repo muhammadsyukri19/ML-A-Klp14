@@ -21,14 +21,10 @@ SCALER_PATH = OUTPUT_DIR / "scaler.pkl"
 
 TARGET_COLUMN_CANDIDATES = {
     "failure_flag",
-    "stress_level",
-    "suitability_score",
 }
 
 # Fallback dari notebook cleaning jika file selected_features belum ada.
 DEFAULT_SELECTED_FEATURES = [
-    "suitability_score",
-    "stress_level",
     "ph_stress_flag",
     "thermal_regime",
     "soil_temp_c",
